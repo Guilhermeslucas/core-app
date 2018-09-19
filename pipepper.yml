@@ -1,0 +1,74 @@
+resources:
+- repo: self
+queue:
+  name: PiAgent-Linux
+steps:
+- task: JenkinsQueueJob@2
+  displayName: 'Queue Jenkins job: corebanking-app'
+  inputs:
+    serverEndpoint: 'Jenkins Kubernetes'
+
+    jobName: 'corebanking-app'
+
+
+- task: JenkinsDownloadArtifacts@1
+  displayName: 'Download artifacts produced by corebanking-app'
+  inputs:
+    jenkinsServerConnection: 'Jenkins Kubernetes'
+
+    jobName: 'corebanking-app'
+
+
+- task: SonarSource.sonarqube.15B84CA1-B62F-4A2A-A403-89B77A063157.SonarQubePrepare@4
+  displayName: 'Prepare analysis on SonarQube'
+  inputs:
+    scannerMode: CLI
+
+    configMode: manual
+
+    cliProjectName: Net
+
+    cliSources: CoreBanking.App/CoreBanking.App
+
+  enabled: false
+
+- task: SonarSource.sonarqube.6D01813A-9589-4B15-8491-8164AEB38055.SonarQubeAnalyze@4
+  displayName: 'Run Code Analysis'
+
+  enabled: false
+
+- task: SonarSource.sonarqube.291ed61f-1ee4-45d3-b1b0-bf822d9095ef.SonarQubePublish@4
+  displayName: 'Publish Quality Gate Result'
+
+  enabled: false
+
+- task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-sca-install.InstallFortifySCA@1
+  displayName: 'Install SCA on agent'
+  inputs:
+    VS2017: true
+
+  enabled: false
+
+- task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-on-demand-dynamic.FortifyOnDemandDynamic@1
+  displayName: 'Run Fortify on Demand dynamic assessment on '
+
+  enabled: false
+
+- bash: |
+   # Write your commands here
+   echo finish
+   # Use the environment variables input below to pass secret variables to this script 
+  displayName: 'Create new work item on JIRA'
+
+- bash: |
+   # Write your commands here
+   echo finish
+   # Use the environment variables input below to pass secret variables to this script 
+  displayName: 'Kill the slave Windows Container copy'
+
+- bash: |
+   # Write your commands here
+   echo finish
+   # Use the environment variables input below to pass secret variables to this script 
+  displayName: 'Create new slave Windows Container and add to the slave pool'
+

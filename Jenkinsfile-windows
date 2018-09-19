@@ -1,0 +1,84 @@
+pipeline{
+      agent  { node { label 'windows' } }
+      environment
+      {
+        SOLUTION_NAME = 'creditservice.sln'
+        BUILD_NUMBER = '1.0.1'
+        PROJECT_NAME = 'creditservice.csproj'
+        NUSPEC = 'CoreBanking.App.nuspec'
+        PROJECT_TEST_NAME = 'creditservice.Test'
+      }
+    stages
+    {
+        stage('prepare')
+        {
+            steps
+            {
+                echo  "setup the app environment...."                    
+            }      
+        }
+        stage('clone')
+        {
+            steps
+            {
+                echo "echo cloning the  repository..."
+                checkout scm
+            }      
+        }
+        stage('build')
+        {
+            steps
+            {
+                echo "building the app..."
+                bat "dotnet restore ${SOLUTION_NAME}"
+                    script 
+                    {                        
+                        bat "dotnet build ${SOLUTION_NAME}"
+                    } 
+            }
+        
+        }
+        stage('unit test')
+        {
+            steps
+            {
+                bat "dotnet test ${PROJECT_TEST_NAME} -v n"
+            }
+        
+        }
+        stage('quality')
+        {
+            steps
+            {
+                echo "running sonarqube...."
+            }
+        
+        }
+        stage('SAST')
+        {
+            steps
+            {
+                echo "running fortify..."
+            }      
+        }
+        stage('package')
+        {
+            steps
+            {             
+                echo "packaging the app to NUGET..."
+                bat "nuget pack ./creditservice/${PROJECT_NAME}"
+               // bat '$env:NUGET_CREDENTIALPROVIDERS_PATH = c:\nugets'
+              //  bat 'nuget sources Add -Name "Pipackagernet" -Source "https://pipepper.pkgs.visualstudio.com/_packaging/Pipackagernet/nuget/v3/index.json"'
+                archive "${PROJECT_NAME}/bin/Release/**"
+                bat 'nuget push -Source "Pipackagernet" -ApiKey VSTS creditservice.'+"${BUILD_NUMBER}"+'.nupkg'
+            }    
+        }
+        stage('publish')
+        {
+            steps
+            {
+                echo "publishing the app using Terraform..."             
+            }       
+        }
+    }
+}
